@@ -1,34 +1,39 @@
-# Bank Data Platform
+# bank-data-platform
 
 ## Goal
-Build a production-ready, multi-environment (Dev / Prod) data pipeline on AWS for banking data.  
-The platform follows the Medallion architecture (Bronze → Silver → Gold) and is fully managed with Terraform + GitHub Actions.
+A production-style data platform on AWS for a synthetic retail banking
+dataset. Built to practise what separates a practice pipeline from a
+production one: reliability, data quality, security, observability and
+CI/CD with separate dev and prod environments.
 
-## Architecture Summary
-- **Ingestion**: S3 + EventBridge / Kinesis
-- **Processing**: AWS Glue + Step Functions
-- **Storage**: S3 Data Lake (Bronze / Silver / Gold)
-- **Orchestration**: Step Functions + EventBridge
-- **Analytics**: Athena / Redshift Serverless
-- **Infrastructure**: Terraform (multi-account / multi-env)
+## Architecture
+Data flows through these layers:
+- Generator: synthetic customers, accounts and transactions
+- Bronze (S3): raw, immutable files
+- Silver (Glue PySpark): cleaned, deduplicated, PII masked, bad rows quarantined
+- Gold (Glue PySpark): daily balances and spend aggregates
+- Redshift: staging, merge and serving
+- Airflow: orchestration, retries and backfills
 
-> Detailed diagram available in [`docs/architecture.md`](docs/architecture.md)
+Cross-cutting: data quality gates, CloudWatch and SNS alerts,
+IAM/KMS/Lake Formation security, Terraform and GitHub Actions.
 
-## Naming Convention
-All resources follow this pattern:
+Diagram: docs/[your-diagram-file]
 
+## Naming convention
+Pattern: bank-{env}-{layer}
+- Environments: dev, prod
+- Layers: bronze, silver, gold, quarantine
+- Bucket suffix: [your suffix], for global uniqueness
+- Example: bank-dev-bronze-[suffix]
+- Every resource is tagged project = bank-data-platform
 
-Examples:
-- `bank-dev-bronze-raw-transactions`
-- `bank-prod-gold-customer-metrics`
-- `bank-dev-glue-job-transactions-cleaner`
+## Promotion flow
+1. Create a feature branch
+2. Open a pull request (CI runs checks)
+3. Merge to main, which deploys to dev automatically
+4. Verify in dev
+5. Approve, and the same code deploys to prod
 
-Bucket suffix (optional uniqueness): `-asimiyu` or your initials.
-
-## Promotion Flow
-1. Develop & test in **Dev** environment
-2. Create a Pull Request
-3. GitHub Actions runs `terraform plan` on Dev
-4. After approval → merge to `main`
-5. Manual approval required for **Prod** deployment
-6. GitHub Actions applies changes to Prod
+## Status
+[Phase 1: foundations in progress]
